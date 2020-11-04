@@ -23,3 +23,29 @@ install.packages(c(
   "shinycssloaders", "shinyFeedback", "shinythemes", "testthat", 
   "thematic", "tidyverse", "vroom", "waiter", "xml2", "zeallot" 
 ))
+
+# CSS bootstrap classes
+actionButton("click", "Click me!", class = "btn-danger")
+actionButton("drink", "Drink me!", class = "btn-lg btn-success")
+actionButton("drink", "Drink me!", icon = icon("cocktail"))
+
+
+# render function
+# Note that the {} are not required in render functions, 
+# unless you need to run multiple lines of code.
+
+
+# renderText() combines the result into a single string.
+# renderPrint() prints the result.
+
+# Data table refences
+# https://datatables.net/reference/option/
+# https://shiny.rstudio.com/reference/shiny/latest/renderDataTable.html
+
+# THEMES
+# https://dreamrs.github.io/fresh/
+
+
+
+
+
