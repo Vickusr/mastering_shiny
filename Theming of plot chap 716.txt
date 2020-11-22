@@ -1,0 +1,7 @@
+library(thematic)
+thematic_on(bg = "#222222", fg = "white", accent = "#0CE3AC")
+
+library(ggplot2)
+ggplot(mtcars, aes(wt, mpg)) +
+  geom_point() +
+  geom_smooth()
