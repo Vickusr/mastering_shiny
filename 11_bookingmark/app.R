@@ -9,6 +9,8 @@
 
 library(shiny)
 
+reactlog::reactlog_enable()
+
 # Define UI for application that draws a histogram
 ui <- function(request) {
     fluidPage(

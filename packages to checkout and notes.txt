@@ -54,3 +54,120 @@ The use of isolate() is important. We’ll come back to exactly why it’s neede
 The %||% (default value for NULL) operator is documented here.
 https://rlang.r-lib.org/reference/op-null-default.html
 
+
+Bookmarking:
+https://mastering-shiny.org/action-bookmark.html?
+
+
+Data filter via data masking:
+Imagine we want to extend this code so that it works for any variable and any value. That is straightforward with base R because you can switch from $ to [[:
+
+var <- "carat"
+min <- 1
+diamonds[diamonds[[var]] > min, ]
+
+or
+
+Data-masking solves the indirection problem in a similar way, by introducing an object, .data, that you can subset with either $ or [[. To get started we can rewrite our previous filter() call to use .data to make it clear that carat is a data-variable32:
+
+diamonds %>% filter(.data$carat > min)
+ 
+ or
+ 
+ This form isn’t particularly useful (unless you’re writing a package, in which case it eliminates a pesky R CMD check NOTE), but because we have some object to index into, we can switch from $ to [[:
+
+var <- "carat"
+diamonds %>% filter(.data[[var]] > min)
+
+Example:
+ui <- fluidPage(
+  selectInput("var", "Variable", choices = names(diamonds)),
+  numericInput("min", "Minimum", value = 1),
+  tableOutput("output")
+)
+server <- function(input, output, session) {
+  data <- reactive(filter(diamonds, .data[[input$var]] > input$min))
+  output$output <- renderTable(head(data()))
+}
+
+
+
+
+======== Full example =======
+ui <- fluidPage(
+  selectInput("x", "X variable", choices = names(iris)),
+  selectInput("y", "Y variable", choices = names(iris)),
+  selectInput("geom", "geom", c("point", "smooth", "jitter")),
+  plotOutput("plot")
+)
+server <- function(input, output, session) {
+  plot_geom <- reactive({
+    switch(input$geom,
+      point = geom_point(),
+      smooth = geom_smooth(se = FALSE),
+      jitter = geom_jitter()
+    )
+  })
+  
+  output$plot <- renderPlot({
+    ggplot(iris, aes(.data[[input$x]], .data[[input$y]])) +
+      plot_geom()
+  }, res = 96)
+}
+
+
+======== Issue with data masking ==========
+df <- data.frame(x = 1, y = 2, input = 3)
+df %>% filter(.data[[input$var]] > input$min)
+#> Error: Problem with `filter()` input `..1`.
+#> ✖ $ operator is invalid for atomic vectors
+#> ℹ Input `..1` is `.data[["x"]] > input$min`.
+
+We get an error message because filter() is attempting to evaluate df$input$min:
+
+df$input$min
+#> Error in df$input$min: $ operator is invalid for atomic vectors
+
+This problem is due to the ambiguity of data-variables and env-variables, and because data-masking prefers to use a data-variable if both are available. We can resolve the problem by using .env33 to tell filter() only look for min in the env-variables:
+
+df %>% filter(.data[[input$var]] > .env$input$min)
+#>   x y input
+#> 1 1 2     3
+
+
+
+============ Tidy evaluations ============
+ui <- fluidPage(
+  selectInput("vars", "Variables", names(mtcars), multiple = TRUE),
+  tableOutput("data")
+)
+
+server <- function(input, output, session) {
+  output$data <- renderTable({
+    req(input$vars)
+    mtcars %>% select(all_of(input$vars))
+  })
+}
+
+
+
+=========== Reactivity ================
+15.2.1
+By default, it will cause outputs to reset to their initial blank state, but if you use req(..., cancelOutput = TRUE) they’ll preserve their current display.
+
+
+=========== observeEvent ==============
+
+
+    By default, observeEvent() will ignore any event that yields NULL (or in the special case of action buttons, 0). Use ignoreNULL = FALSE to also handle NULL values.
+
+    By default, observeEvent() runs once when you create it. Use ignoreInit = TRUE to skip this run.
+
+    Use once = TRUE to run the handler only once.
+
+
+
+============ Invalidate later ============
+This achieves the goal of updating changing data from disk, but it has a serious downside: when you invalidate the reactive, you’re also invalidating all downstream consumers, so even if the data is the same, all the downstream work has to be redone. To avoid this problem, Shiny provides reactivePoll() which takes two functions: one that performs a relatively cheap check to see if the data has changed and another more expensive function that actually does the computation.
+
+We can use reactivePoll() to rewrite the previous reactive as follows. We use file.mtime(), which returns the last time the file was modified, as cheap check to see if we need to reload the file.
