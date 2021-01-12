@@ -1,0 +1,8 @@
+https://r4ds.had.co.nz/index.html
+https://adv-r.hadley.nz/index.html
+https://happygitwithr.com/
+https://bookdown.org/yihui/rmarkdown/
+https://bookdown.org/rdpeng/RProgDA/
+https://engineering-shiny.org/
+https://thinkr-open.github.io/golem/
+https://geocompr.robinlovelace.net/

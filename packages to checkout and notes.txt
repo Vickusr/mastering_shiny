@@ -5,6 +5,10 @@ shinymaterial
 shiny.semantic
 thematic
 progress
+shinysignals
+rxtools
+renv
+config (https://github.com/rstudio/config)
 
 
 package 	version 	source
@@ -171,3 +175,75 @@ By default, it will cause outputs to reset to their initial blank state, but if 
 This achieves the goal of updating changing data from disk, but it has a serious downside: when you invalidate the reactive, you’re also invalidating all downstream consumers, so even if the data is the same, all the downstream work has to be redone. To avoid this problem, Shiny provides reactivePoll() which takes two functions: one that performs a relatively cheap check to see if the data has changed and another more expensive function that actually does the computation.
 
 We can use reactivePoll() to rewrite the previous reactive as follows. We use file.mtime(), which returns the last time the file was modified, as cheap check to see if we need to reload the file.
+
+
+============== CI/CD ==================
+https://github.com/features/actions
+https://travis-ci.org/
+https://about.gitlab.com/stages-devops-lifecycle/continuous-integration/
+https://www.jenkins.io/
+
+There are a variety of services that can connect to a Git repo and automatically run tests when you push a new commit or propose changes. Depending on where your code is hosted, you can consider GitHub actions, Travis CI, Azure Pipelines, AppVeyor, Jenkins, or GitLab CI/CD, to name a few.
+
+
+============ Code Review ==================
+https://github.com/thoughtbot/guides/tree/main/code-review
+https://google.github.io/eng-practices/review/
+
+
+
+============ Dependancy Management =============
+renv
+config (https://github.com/rstudio/config)
+
+
+
+
+
+============ Shiny Functions - Chap 18 =======================
+library(purrr)
+
+vars <- c("alpha", "beta", "gamma", "delta")
+sliders <- map(vars, sliderInput01)
+ui <- fluidRow(sliders)
+
+with variables
+vars <- tibble::tribble(
+  ~ id,   ~ min, ~ max,
+  "alpha",     0,     1,
+  "beta",      0,    10,
+  "gamma",    -1,     1,
+  "delta",     0,     1,
+)
+
+mySliderInput <- function(id, label = id, min = 0, max = 1) {
+  sliderInput(id, label, min = min, max = max, value = 0.5, step = 0.1)
+}
+
+sliders <- pmap(vars, mySliderInput)
+
+
+============ Chap 19.3 ========
+worth a Re-read
+
+
+19.3.6
+If you find yourself frequently returning multiple values from a reactive, you might also consider using the zeallot package. zeallot provides the %<-% operator which allows you to assign into multiple variables (sometimes called multiple, unpacking, or destructuring assignment). This can be useful when returning multiple values because you avoid a layer of indirection.
+
+library(zeallot)
+
+histogramApp <- function() {
+  ui <- fluidPage(...)
+
+  server <- function(input, output, session) {
+    data <- datasetServer("data")
+    c(value, name) %<-% selectVarServer("var", data)
+    histogramServer("hist", value, name)
+  }
+  shinyApp(ui, server)
+}
+
+
+
+
+
